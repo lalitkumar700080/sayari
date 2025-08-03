@@ -1,0 +1,55 @@
+body {
+  background-color: #bd1873;
+  color: white;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+.category-buttons button {
+  background-color: rgb(14, 28, 223);
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  margin: 5px;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.back-btn {
+  background-color: oklch(87.92% 0.27791 139.148 / 0.952);
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  margin-top: 30px;
+  border-radius: 10px;
+}
+
+.shayari {
+  background-color: #0eb9b9;
+  margin: 15px auto;
+  padding: 15px;
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.copy-btn, .share-btn {
+  margin: 8px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.copy-btn {
+  background-color: #33cc33;
+  color: white;
+}
+
+.share-btn {
+  background-color: #3366ff;
+  color: white;
+}
