@@ -1,38 +1,180 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>गिल्लू दी शायरी</title>
-  <h1>🩵Proved By Pihu Ke Papa🩵</h1>
-  <h1>🩵💚👉🏼👈🏿🩵💚</h1>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <title>Moon Chat 🚀</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+    #auth, #chat { border: 1px solid #ccc; padding: 20px; width: 320px; margin: auto; border-radius: 10px; }
+    #chat { display: none; }
+    #chat-box { border: 1px solid #aaa; height: 250px; overflow-y: auto; margin: 10px 0; padding: 10px; text-align: left; }
+    input, button { margin: 5px; padding: 8px; width: 90%; }
+    .msg { padding: 4px; margin: 2px 0; border-radius: 5px; }
+    .me { background: #d1ffd1; }
+    .other { background: #f1f1f1; }
+  </style>
 </head>
 <body>
-  <h1>💙 गिल्लू दी शायरी 💙</h1>
+  <h1>🌙 Moon Chat</h1>
 
-  <div class="category-buttons">
-    <button onclick="showCategory('pyaar')">❤️ प्यार</button>
-    <button onclick="showCategory('gam')">💔 गम</button>
-    <button onclick="showCategory('dosti')">🤝 दोस्ती</button>
-    <button onclick="showCategory('khwab')">🌙 ख्वाब</button>
-    <button onclick="showCategory('zindagi')">🌿 ज़िंदगी</button>
+  <!-- Login/Signup -->
+  <div id="auth">
+    <input id="email" type="email" placeholder="Email"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <button id="signup">Sign Up</button>
+    <button id="login">Login</button>
   </div>
-  <div id="shayari-list"></div>
-<div>
-  <button class="back-btn" onclick="goBack()">⬅️ वापस जाएँ</button>
-</div>
-  <script src="script.js"></script>
-  <script type="text/javascript">
-	atOptions = {
-		'key' : 'f79fd4fc46a759e427d237077e096c3b',
-		'format' : 'iframe',
-		'height' : 90,
-		'width' : 728,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//
-www.highperformanceformat.com/f79fd4fc46a759e427d237077e096c3b/invoke.js"></script></body>
-</html>
 
+  <!-- Chat -->
+  <div id="chat">
+    <h3>Welcome, <span id="my-username"></span></h3>
+
+    <!-- Username input for private chat -->
+    <input id="chat-username" placeholder="Enter username to chat"><br>
+    <button id="start-chat">Start Chat</button>
+
+    <div id="chat-box"></div>
+
+    <input id="message" placeholder="Type message...">
+    <button id="send">Send</button>
+  </div>
+
+  <script type="module">
+    // ================= FIREBASE CONFIG =================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getDatabase, ref, set, onChildAdded, push, get, query, orderByChild, equalTo } 
+      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDE8zApy4owfoFlgrbB80LSCEVxRWAvqcc",
+      authDomain: "lalitapp-5cdf0.firebaseapp.com",
+      databaseURL: "https://lalitapp-5cdf0-default-rtdb.firebaseio.com",
+      projectId: "lalitapp-5cdf0",
+      storageBucket: "lalitapp-5cdf0.appspot.com",
+      messagingSenderId: "296397903515",
+      appId: "1:296397903515:web:efe85353eb8f548243d83e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // ================= ELEMENTS =================
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const signupBtn = document.getElementById("signup");
+    const loginBtn = document.getElementById("login");
+
+    const authBox = document.getElementById("auth");
+    const chatDiv = document.getElementById("chat");
+    const chatBoxDiv = document.getElementById("chat-box");
+    const msgInput = document.getElementById("message");
+    const sendBtn = document.getElementById("send");
+
+    const chatUsernameInput = document.getElementById("chat-username");
+    const startChatBtn = document.getElementById("start-chat");
+    const myUsernameSpan = document.getElementById("my-username");
+
+    let currentUser = null;
+    let myUsername = "";
+    let selectedUserId = "";
+    let selectedUsername = "";
+    let chatId = "";
+
+    // ================= HELPERS =================
+    function generateUsername() {
+      return "user" + Math.floor(Math.random() * 10000);
+    }
+
+    async function loadMessages() {
+      chatBoxDiv.innerHTML = "";
+      if (!chatId) return;
+      const msgRef = ref(db, "chats/" + chatId);
+      onChildAdded(msgRef, (snapshot) => {
+        const msg = snapshot.val();
+        const div = document.createElement("div");
+        div.classList.add("msg");
+        div.classList.add(msg.uid === currentUser.uid ? "me" : "other");
+        div.textContent = msg.username + ": " + msg.text;
+        chatBoxDiv.appendChild(div);
+        chatBoxDiv.scrollTop = chatBoxDiv.scrollHeight;
+      });
+    }
+
+    // ================= AUTH =================
+    signupBtn.onclick = async () => {
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+        const user = userCred.user;
+        const username = generateUsername();
+        await set(ref(db, "users/" + user.uid), { email: user.email, username });
+        alert("Signup successful! Your username: " + username);
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    loginBtn.onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const snapshot = await get(ref(db, "users/" + user.uid));
+        if (snapshot.exists()) {
+          myUsername = snapshot.val().username;
+          myUsernameSpan.textContent = myUsername;
+        }
+        authBox.style.display = "none";
+        chatDiv.style.display = "block";
+      }
+    });
+
+    // ================= START CHAT BY USERNAME =================
+    startChatBtn.onclick = async () => {
+      const targetUsername = chatUsernameInput.value.trim();
+      if (!targetUsername) return alert("Enter a username!");
+
+      const userQuery = query(ref(db, "users"), orderByChild("username"), equalTo(targetUsername));
+      const snapshot = await get(userQuery);
+
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          selectedUserId = child.key;
+          selectedUsername = child.val().username;
+        });
+
+        if (selectedUserId === currentUser.uid) {
+          alert("You cannot chat with yourself!");
+          return;
+        }
+
+        chatId = currentUser.uid < selectedUserId ? currentUser.uid + "_" + selectedUserId : selectedUserId + "_" + currentUser.uid;
+        loadMessages();
+      } else {
+        alert("User not found!");
+      }
+    };
+
+    // ================= CHAT =================
+    sendBtn.onclick = async () => {
+      if (!chatId || msgInput.value.trim() === "") return;
+      const msgRef = ref(db, "chats/" + chatId);
+      await push(msgRef, {
+        uid: currentUser.uid,
+        username: myUsername,
+        text: msgInput.value,
+        time: Date.now()
+      });
+      msgInput.value = "";
+    };
+  </script>
+</body>
+</html>
